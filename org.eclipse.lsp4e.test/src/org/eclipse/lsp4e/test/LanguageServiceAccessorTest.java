@@ -28,8 +28,8 @@ import static org.eclipse.lsp4e.test.TestUtils.createUniqueTestFile;
 import static org.eclipse.lsp4e.test.TestUtils.createUniqueTestFileMultiLS;
 import static org.eclipse.lsp4e.test.TestUtils.openEditor;
 import static org.eclipse.lsp4e.test.TestUtils.openTextViewer;
-import static org.eclipse.lsp4e.test.TestUtils.waitForCondition;
 import static org.eclipse.lsp4e.test.TestUtils.waitForAndAssertCondition;
+import static org.eclipse.lsp4e.test.TestUtils.waitForCondition;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -421,8 +421,8 @@ public class LanguageServiceAccessorTest {
 			var hoverProvider = capabilities.getHoverProvider();
 			return hoverProvider.isLeft() ? hoverProvider.getLeft() : hoverProvider.getRight() != null;
 		};
-
-		assertEquals(1, getLanguageServers(getTextViewer(editor).getDocument(), hasHoverCapabilities).get().size());
+		var servers = getLanguageServers(getTextViewer(editor).getDocument(), hasHoverCapabilities).get();
+		assertEquals(1, servers.size());
 		wb.getActivePage().closeAllEditors(false);
 		// opening another file should either reuse the LS or spawn another one, but not both
 		assertEquals(1, getLanguageServers( //

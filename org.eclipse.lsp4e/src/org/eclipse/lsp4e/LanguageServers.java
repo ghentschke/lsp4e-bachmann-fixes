@@ -255,6 +255,32 @@ public abstract class LanguageServers<E extends LanguageServers<E>> {
 			});
 		}
 
+		public List<@NonNull CompletableFuture<@Nullable LanguageServerWrapper>> connectLinkedDocument(IDocument linkedDocument) {
+			Collection<LanguageServerWrapper> wrappers = LanguageServiceAccessor.getLSWrappers(document);
+			return order(wrappers).stream().map(this::filterForDocument).map(wrapperFuture -> connectLinkedDoc(wrapperFuture, linkedDocument)).toList();
+		}
+
+		private @NonNull CompletableFuture<@Nullable LanguageServerWrapper> connectLinkedDoc(@NonNull CompletableFuture<@Nullable LanguageServerWrapper> wrapperFuture, IDocument linkedDocument) {
+			return wrapperFuture.thenCompose(wrapper -> {
+				if (wrapper != null && linkedDocument != null) {
+					try {
+						CompletableFuture<LanguageServer> serverFuture = wrapper.connect(linkedDocument);
+						if (serverFuture != null) {
+							return serverFuture.thenApply(server -> wrapper);
+						}
+					} catch (IOException e) {
+						LanguageServerPlugin.logError(e);
+					}
+				}
+				return CompletableFuture.completedFuture(null);
+			});
+		}
+
+		private @NonNull CompletableFuture<@Nullable LanguageServerWrapper> filterForDocument(@NonNull LanguageServerWrapper wrapper) {
+			return wrapper.getInitializedServer()
+					.thenCompose(server -> CompletableFuture.completedFuture(server != null && wrapper.canOperate(document)))
+					.thenApply(matches -> matches ? wrapper: null);
+		}
 
 		/**
 		 * Test whether this server supports the requested <code>ServerCapabilities</code>.
