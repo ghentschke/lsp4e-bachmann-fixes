@@ -167,6 +167,8 @@ import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.eclipse.ui.texteditor.ITextEditor;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.primitives.Chars;
 
 /**
@@ -185,6 +187,7 @@ public final class LSPEclipseUtils {
 	private static final String MARKDOWN = "markdown"; //$NON-NLS-1$
 	private static final String MD = "md"; //$NON-NLS-1$
 	private static final int MAX_BROWSER_NAME_LENGTH = 30;
+	private static final Cache<IDocument, List<IContentType>> contentTypeCache =  CacheBuilder.newBuilder().maximumSize(100).build();
 
 	private LSPEclipseUtils() {
 		// this class shouldn't be instantiated
@@ -1367,6 +1370,11 @@ public final class LSPEclipseUtils {
 	}
 
 	public static List<IContentType> getDocumentContentTypes(IDocument document) {
+		var types =  contentTypeCache.getIfPresent(document);
+		if (types != null) {
+			return types;
+		}
+
 		final var contentTypes = new ArrayList<IContentType>();
 
 		ITextFileBuffer buffer = toBuffer(document);
@@ -1395,6 +1403,7 @@ public final class LSPEclipseUtils {
 				LanguageServerPlugin.logError(e);
 			}
 		}
+		contentTypeCache.put(document, contentTypes);
 		return contentTypes;
 	}
 
